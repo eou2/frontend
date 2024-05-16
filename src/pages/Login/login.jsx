@@ -49,7 +49,7 @@ export default function Login() {
             </Form>
             {error !== "" ? <Error>{error}</Error> : null}
             <Switcher>
-                계정이 없으신가요? <Link to="/create-account">가입하기 &rarr;</Link>
+                계정이 없으신가요? <Link to="/signup">가입하기 &rarr;</Link>
             </Switcher>
         </Wrapper>
     );
