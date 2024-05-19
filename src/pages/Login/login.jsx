@@ -4,13 +4,13 @@ import styled from "styled-components";
 import { Error, Form, Input, Switcher, Wrapper } from "../../components/auth-components";
 import { Link } from "react-router-dom";
 import logoImage from "../../images/EF_Logo.png";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Login() {
     const navigate = useNavigate();
-    const [isLoading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const { auth, login } = useAuth();
 
     const onChange = (e) => {
         const { name, value } = e.target;
@@ -21,15 +21,21 @@ export default function Login() {
         }
     };
 
-    const onSubmit = (e) => {
+    const onSubmit = async (e) => {
         e.preventDefault();
-        setError("");
-        if (isLoading || email === "" || password === "") return;
+        if (auth.isLoading || email === "" || password === "") return;
 
-        setLoading(true);
-        // 여기에 로그인 로직을 구현할 예정
-        console.log(email, password);
-        setLoading(false);
+        try {
+            console.log("Sending login request...", { email, password });
+            await login(email, password);
+            console.log("Login response:", auth);
+
+            if (auth.isAuthenticated) {
+                navigate("/");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+        }
     };
 
     return (
@@ -45,9 +51,9 @@ export default function Login() {
                     type="password"
                     required
                 />
-                <Input type="submit" value={isLoading ? "Loading..." : "로그인"} />
+                <Input type="submit" value={auth.isLoading ? "Loading..." : "로그인"} />
             </Form>
-            {error !== "" ? <Error>{error}</Error> : null}
+            {auth.error && <Error>{auth.error}</Error>}
             <Switcher>
                 계정이 없으신가요? <Link to="/signup">가입하기 &rarr;</Link>
             </Switcher>

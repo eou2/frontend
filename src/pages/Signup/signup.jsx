@@ -1,106 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createGlobalStyle } from "styled-components";
-import reset from "styled-reset";
-import styled from "styled-components";
-
-const GlobalStyles = createGlobalStyle`
-  ${reset}
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    color: black;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  }
-`;
-
-const Wrapper = styled.div`
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 420px;
-    padding: 50px 0px;
-`;
-
-const FormContainer = styled.div`
-    width: 100%;
-    max-width: 400px;
-`;
-
-const Input = styled.input`
-    width: 100%;
-    padding: 15px;
-    margin: 15px 0;
-    border: 2px solid #9b59b6;
-    border-radius: 6cqmax;
-    &::placeholder {
-        color: #ccc;
-    }
-`;
-
-const Button = styled.button`
-    width: 100%;
-    padding: 10px 20px;
-    margin-top: 50px;
-    border: none;
-    border-radius: 6px;
-    background-color: #9b59b6;
-    color: white;
-    cursor: pointer;
-    &:disabled {
-        background-color: #ddd;
-        cursor: not-allowed;
-    }
-`;
-
-const StepHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-`;
-
-const Header = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-top: 50px;
-    margin-bottom: 80px;
-
-    h2 {
-        font-size: 28px;
-        color: #9b59b6;
-        margin: 0;
-        font-weight: 800;
-    }
-`;
-
-const TitleContainer = styled.div`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-`;
-
-const ArrowButton = styled.button`
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-`;
-
-const Label = styled.label`
-    display: block;
-    margin: 15px 0;
-    font-size: 16px;
-`;
+import {
+    GlobalStyles,
+    Wrapper,
+    FormContainer,
+    Input,
+    Button,
+    StepHeader,
+    Header,
+    TitleContainer,
+    ArrowButton,
+    Label,
+} from "./signupStyle";
 
 const Signup = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState({
+        name: "",
         gender: "",
         age: "",
         job: "",
@@ -110,9 +26,11 @@ const Signup = () => {
     const navigate = useNavigate();
 
     const handleNext = () => {
-        if (currentStep === 0 && formData.gender && formData.age && formData.job) {
+        if (currentStep === 0 && formData.name) {
             setCurrentStep(currentStep + 1);
-        } else if (currentStep === 1 && formData.hobby) {
+        } else if (currentStep === 1 && formData.gender && formData.age && formData.job) {
+            setCurrentStep(currentStep + 1);
+        } else if (currentStep === 2 && formData.hobby) {
             setCurrentStep(currentStep + 1);
         }
     };
@@ -138,6 +56,36 @@ const Signup = () => {
     const renderStep = () => {
         switch (currentStep) {
             case 0:
+                return (
+                    <div>
+                        <StepHeader>
+                            <ArrowButton onClick={handlePrev}>←</ArrowButton>
+                            <TitleContainer>
+                                <h2>기본정보</h2>
+                            </TitleContainer>
+                            <ArrowButton disabled={!formData.name} onClick={handleNext}>
+                                →
+                            </ArrowButton>
+                        </StepHeader>
+                        <Header>
+                            <h2>이름을 입력해주세요</h2>
+                        </Header>
+                        <Label>
+                            이름
+                            <Input
+                                type="text"
+                                placeholder="예) 김이프"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                            />
+                        </Label>
+                        <Button disabled={!formData.name} onClick={handleNext}>
+                            다음
+                        </Button>
+                    </div>
+                );
+            case 1:
                 return (
                     <div>
                         <StepHeader>
@@ -190,7 +138,7 @@ const Signup = () => {
                         </Button>
                     </div>
                 );
-            case 1:
+            case 2:
                 return (
                     <div>
                         <StepHeader>
@@ -220,7 +168,7 @@ const Signup = () => {
                         </Button>
                     </div>
                 );
-            case 2:
+            case 3:
                 return (
                     <div>
                         <StepHeader>

@@ -1,6 +1,6 @@
-import AppRouter from "./routes/AppRouter";
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router } from "react-router-dom";
+import AppRouter from "./routes/AppRouter";
+import { RecoilRoot } from "recoil";
 import { createGlobalStyle } from "styled-components";
 import reset from "styled-reset";
 import styled from "styled-components";
@@ -36,10 +36,12 @@ function App() {
     }, []);
 
     return (
-        <Wrapper>
-            <GlobalStyles />
-            {isLoading ? <LoadingScreen /> : <AppRouter />}
-        </Wrapper>
+        <RecoilRoot>
+            <Wrapper>
+                <GlobalStyles />
+                {isLoading ? <LoadingScreen /> : <AppRouter />}
+            </Wrapper>
+        </RecoilRoot>
     );
 }
 
