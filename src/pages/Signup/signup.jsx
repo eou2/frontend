@@ -37,7 +37,7 @@ const Signup = () => {
             () => formData.sex && formData.age && formData.job,
             () => formData.hobby,
             () => formData.mbti,
-            () => formData.image.length > 0,
+            () => formData.image,
             () => formData.city,
         ];
 
@@ -66,7 +66,7 @@ const Signup = () => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onloadend = () => {
-            setFormData({ ...formData, image: [reader.result] });
+            setFormData({ ...formData, image: reader.result }); // 단일 문자열로 저장
         };
         reader.readAsDataURL(file);
     };
@@ -78,7 +78,7 @@ const Signup = () => {
     const handleSubmit = async () => {
         try {
             console.log("Form Data:", formData);
-            const response = await signup(formData);
+            const response = await signup(formData); // JSON 형태로 전송
             console.log("회원가입 성공:", response);
             navigate("/welcome");
         } catch (error) {
@@ -308,12 +308,7 @@ const Signup = () => {
                             <TitleContainer>
                                 <h2>회원가입</h2>
                             </TitleContainer>
-                            <ArrowButton
-                                src={ArrowRight}
-                                alt="Next"
-                                onClick={handleNext}
-                                disabled={formData.image.length === 0}
-                            />
+                            <ArrowButton src={ArrowRight} alt="Next" onClick={handleNext} disabled={!formData.image} />
                         </StepHeader>
                         <Header>
                             <h2>프로필 사진을 업로드해주세요</h2>
@@ -322,7 +317,7 @@ const Signup = () => {
                             프로필 사진
                             <Input type="file" accept="image/*" onChange={handleImageChange} />
                         </Label>
-                        <Button disabled={formData.image.length === 0} onClick={handleNext}>
+                        <Button disabled={!formData.image} onClick={handleNext}>
                             다음
                         </Button>
                     </div>

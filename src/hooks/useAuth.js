@@ -8,18 +8,26 @@ export const useAuth = () => {
     // 회원가입
     const signup = async (formData) => {
         try {
-            const response = await axios.post("http://43.203.209.38:8080/member/sign-up", {
-                email: formData.email,
-                password: formData.password,
-                nickname: formData.nickname,
-                sex: formData.sex,
-                hobby: formData.hobby,
-                age: formData.age,
-                image: formData.image,
-                city: formData.city,
-                mbti: formData.mbti,
-                job: formData.job,
-            });
+            const response = await axios.post(
+                "http://43.203.209.38:8080/member/sign-up",
+                {
+                    email: formData.email,
+                    password: formData.password,
+                    nickname: formData.nickname,
+                    sex: formData.sex,
+                    hobby: formData.hobby,
+                    age: formData.age,
+                    image: formData.image,
+                    city: formData.city,
+                    mbti: formData.mbti,
+                    job: formData.job,
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
             setAuth((prevAuth) => ({
                 ...prevAuth,
                 isAuthenticated: true,

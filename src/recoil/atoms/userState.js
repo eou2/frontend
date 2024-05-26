@@ -12,7 +12,7 @@ export const userState = atom({
         job: "",
         hobby: "",
         mbti: "",
-        image: [],
+        image: "",
         city: "",
     },
 });
