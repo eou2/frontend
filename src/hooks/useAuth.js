@@ -11,16 +11,20 @@ export const useAuth = () => {
             const response = await axios.post("http://43.203.209.38:8080/member/sign-up", {
                 email: formData.email,
                 password: formData.password,
-                nickname: formData.name,
-                sex: formData.gender,
+                nickname: formData.nickname,
+                sex: formData.sex,
                 hobby: formData.hobby,
                 age: formData.age,
-                image: [formData.profileImage],
-                city: formData.location,
+                image: formData.image,
+                city: formData.city,
                 mbti: formData.mbti,
                 job: formData.job,
             });
-            setAuth(response.data);
+            setAuth((prevAuth) => ({
+                ...prevAuth,
+                isAuthenticated: true,
+                user: response.data,
+            }));
             return response.data;
         } catch (error) {
             console.error("회원가입 오류:", error);
@@ -30,7 +34,7 @@ export const useAuth = () => {
 
     // 로그인
     const login = async (email, password) => {
-        setAuth({ ...auth, error: "" });
+        setAuth((prevAuth) => ({ ...prevAuth, error: "" }));
         try {
             const response = await axios.post(
                 "http://43.203.209.38:8080/member/sign-in",
@@ -45,12 +49,13 @@ export const useAuth = () => {
                 }
             );
             const data = response.data;
-            setAuth({
+            setAuth((prevAuth) => ({
+                ...prevAuth,
                 isAuthenticated: true,
                 token: data.accessToken,
                 user: data,
                 error: "",
-            });
+            }));
         } catch (error) {
             const errorMsg =
                 error.response && error.response.status === 403
@@ -58,7 +63,7 @@ export const useAuth = () => {
                     : `로그인 실패: 서버에서 ${
                           error.response ? error.response.status : "알 수 없는"
                       } 오류가 발생했습니다.`;
-            setAuth({ ...auth, error: errorMsg });
+            setAuth((prevAuth) => ({ ...prevAuth, error: errorMsg }));
         }
     };
 

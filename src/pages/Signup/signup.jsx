@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRecoilState } from "recoil";
+import { useAuth } from "../../hooks/useAuth";
+import { userState } from "../../recoil/atoms/userState";
 import {
     GlobalStyles,
     Wrapper,
@@ -16,45 +19,33 @@ import {
 } from "./signupStyle";
 import ArrowLeft from "../../images/ArrowLeft.svg";
 import ArrowRight from "../../images/ArrowRight.svg";
-import { useAuth } from "../../hooks/useAuth";
 
 const Signup = () => {
     const [currentStep, setCurrentStep] = useState(0);
-    const [formData, setFormData] = useState({
-        name: "",
-        gender: "",
-        age: "",
-        job: "",
-        hobby: "",
-        mbti: "",
-        profileImage: "",
-        location: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-    });
+    const [formData, setFormData] = useRecoilState(userState);
     const { signup } = useAuth();
     const navigate = useNavigate();
 
     const handleNext = () => {
-        if (
-            currentStep === 0 &&
-            formData.email &&
-            formData.password &&
-            formData.confirmPassword &&
-            formData.password === formData.confirmPassword
-        ) {
+        const stepsValidation = [
+            () =>
+                formData.email &&
+                formData.password &&
+                formData.confirmPassword &&
+                formData.password === formData.confirmPassword,
+            () => formData.nickname,
+            () => formData.sex && formData.age && formData.job,
+            () => formData.hobby,
+            () => formData.mbti,
+            () => formData.image.length > 0,
+            () => formData.city,
+        ];
+
+        const isValidStep = stepsValidation[currentStep] && stepsValidation[currentStep]();
+        if (isValidStep) {
             setCurrentStep(currentStep + 1);
-        } else if (currentStep === 1 && formData.name) {
-            setCurrentStep(currentStep + 1);
-        } else if (currentStep === 2 && formData.gender && formData.age && formData.job) {
-            setCurrentStep(currentStep + 1);
-        } else if (currentStep === 3 && formData.hobby) {
-            setCurrentStep(currentStep + 1);
-        } else if (currentStep === 4 && formData.mbti) {
-            setCurrentStep(currentStep + 1);
-        } else if (currentStep === 5 && formData.profileImage) {
-            setCurrentStep(currentStep + 1);
+        } else {
+            alert("현재 단계의 필수 정보를 모두 입력해주세요.");
         }
     };
 
@@ -75,22 +66,24 @@ const Signup = () => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onloadend = () => {
-            setFormData({ ...formData, profileImage: reader.result });
+            setFormData({ ...formData, image: [reader.result] });
         };
         reader.readAsDataURL(file);
     };
 
-    const handleGenderSelect = (gender) => {
-        setFormData({ ...formData, gender });
+    const handleGenderSelect = (sex) => {
+        setFormData({ ...formData, sex });
     };
 
     const handleSubmit = async () => {
         try {
+            console.log("Form Data:", formData);
             const response = await signup(formData);
-            console.log(response);
+            console.log("회원가입 성공:", response);
             navigate("/welcome");
         } catch (error) {
             console.error("회원가입 실패:", error);
+            alert("회원가입에 실패했습니다. 다시 시도해 주세요.");
         }
     };
 
@@ -166,7 +159,12 @@ const Signup = () => {
                             <TitleContainer>
                                 <h2>회원가입</h2>
                             </TitleContainer>
-                            <ArrowButton src={ArrowRight} alt="Next" onClick={handleNext} disabled={!formData.name} />
+                            <ArrowButton
+                                src={ArrowRight}
+                                alt="Next"
+                                onClick={handleNext}
+                                disabled={!formData.nickname}
+                            />
                         </StepHeader>
                         <Header>
                             <h2>닉네임을 입력해주세요</h2>
@@ -176,12 +174,12 @@ const Signup = () => {
                             <Input
                                 type="text"
                                 placeholder="예) 김이프"
-                                name="name"
-                                value={formData.name}
+                                name="nickname"
+                                value={formData.nickname}
                                 onChange={handleChange}
                             />
                         </Label>
-                        <Button disabled={!formData.name} onClick={handleNext}>
+                        <Button disabled={!formData.nickname} onClick={handleNext}>
                             다음
                         </Button>
                     </div>
@@ -194,7 +192,12 @@ const Signup = () => {
                             <TitleContainer>
                                 <h2>회원가입</h2>
                             </TitleContainer>
-                            <ArrowButton src={ArrowRight} alt="Next" onClick={handleNext} disabled={!formData.name} />
+                            <ArrowButton
+                                src={ArrowRight}
+                                alt="Next"
+                                onClick={handleNext}
+                                disabled={!formData.sex || !formData.age || !formData.job}
+                            />
                         </StepHeader>
                         <Header>
                             <h2>기본정보를 입력해주세요</h2>
@@ -204,13 +207,13 @@ const Signup = () => {
                             <GenderButtonContainer>
                                 <SelectButton
                                     onClick={() => handleGenderSelect("남성")}
-                                    active={formData.gender === "남성"}
+                                    active={formData.sex === "남성"}
                                 >
                                     남성
                                 </SelectButton>
                                 <SelectButton
                                     onClick={() => handleGenderSelect("여성")}
-                                    active={formData.gender === "여성"}
+                                    active={formData.sex === "여성"}
                                 >
                                     여성
                                 </SelectButton>
@@ -236,7 +239,7 @@ const Signup = () => {
                                 onChange={handleChange}
                             />
                         </Label>
-                        <Button disabled={!formData.gender || !formData.age || !formData.job} onClick={handleNext}>
+                        <Button disabled={!formData.sex || !formData.age || !formData.job} onClick={handleNext}>
                             다음
                         </Button>
                     </div>
@@ -309,7 +312,7 @@ const Signup = () => {
                                 src={ArrowRight}
                                 alt="Next"
                                 onClick={handleNext}
-                                disabled={!formData.profileImage}
+                                disabled={formData.image.length === 0}
                             />
                         </StepHeader>
                         <Header>
@@ -319,7 +322,7 @@ const Signup = () => {
                             프로필 사진
                             <Input type="file" accept="image/*" onChange={handleImageChange} />
                         </Label>
-                        <Button disabled={!formData.profileImage} onClick={handleNext}>
+                        <Button disabled={formData.image.length === 0} onClick={handleNext}>
                             다음
                         </Button>
                     </div>
@@ -341,12 +344,12 @@ const Signup = () => {
                             <Input
                                 type="text"
                                 placeholder="예) 서울"
-                                name="location"
-                                value={formData.location}
+                                name="city"
+                                value={formData.city}
                                 onChange={handleChange}
                             />
                         </Label>
-                        <Button disabled={!formData.location} onClick={handleSubmit}>
+                        <Button disabled={!formData.city} onClick={handleSubmit}>
                             회원가입
                         </Button>
                     </div>
