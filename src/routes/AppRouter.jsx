@@ -4,6 +4,7 @@ import Home from "../pages/Home/home";
 import Login from "../pages/Login/login";
 //import Profile from "../pages/Profile/profile";
 import Signup from "../pages/Signup/signup";
+import VideoChat from "../pages/VideoChat/videochat";
 
 export default function AppRouter() {
     return (
@@ -12,6 +13,7 @@ export default function AppRouter() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/videochat" element={<VideoChat />} />
             </Routes>
         </BrowserRouter>
     );

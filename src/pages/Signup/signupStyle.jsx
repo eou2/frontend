@@ -1,6 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import reset from "styled-reset";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 export const GlobalStyles = createGlobalStyle`
   ${reset}
@@ -49,8 +49,26 @@ export const Button = styled.button`
     cursor: pointer;
     &:disabled {
         background-color: #ddd;
-        cursor: not-allowed;
+        //cursor: not-allowed;
     }
+`;
+
+export const SelectButton = styled(Button)`
+    margin-top: 15px;
+    margin-bottom: 15px;
+    width: 48%;
+    background-color: ${({ active }) => (active ? "#852fdc" : "white")};
+    color: ${({ active }) => (active ? "white" : "black")};
+    border: 2px solid #852fdc;
+    &:hover {
+        background-color: #852fdc;
+        color: white;
+    }
+`;
+
+export const GenderButtonContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
 `;
 
 export const StepHeader = styled.div`
@@ -83,10 +101,9 @@ export const TitleContainer = styled.div`
     width: 100%;
 `;
 
-export const ArrowButton = styled.button`
-    background: none;
-    border: none;
-    font-size: 24px;
+export const ArrowButton = styled.img`
+    width: 20px;
+    height: 20px;
     cursor: pointer;
 `;
 
