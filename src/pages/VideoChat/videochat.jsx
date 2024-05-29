@@ -118,27 +118,57 @@ function VideoChat() {
     const [isCallActive, setIsCallActive] = useState(false);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
-    const ws = useRef(new WebSocket("ws://localhost:8080/signal"));
+    const ws = useRef(null);
+    const [roomId] = useState("12345"); // Room ID는 실제 환경에 맞게 설정하세요.
+    const [username] = useState("user1"); // 사용자 이름은 실제 환경에 맞게 설정하세요.
 
     useEffect(() => {
+        ws.current = new WebSocket("ws://43.203.209.38:8080/signal");
+        ws.current.onopen = () => {
+            console.log("WebSocket connection established");
+            sendMessage({ type: "join_room", roomId, sender: username });
+        };
+        ws.current.onclose = () => {
+            console.log("WebSocket connection closed");
+        };
+        ws.current.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            alert("WebSocket connection failed. Please check the server and try again.");
+        };
+
         ws.current.onmessage = async (message) => {
             const data = JSON.parse(message.data);
-            if (data.type === "offer") {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                ws.current.send(JSON.stringify({ type: "answer", answer }));
-            } else if (data.type === "answer") {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data));
-            } else if (data.type === "candidate") {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(data));
-            } else if (data.type === "message") {
-                setMessages((prev) => [...prev, data.message]);
-            } else if (data.type === "all_users") {
-                // Handle displaying all users
+            switch (data.type) {
+                case "offer":
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    sendMessage({ type: "answer", roomId, answer, sender: username });
+                    break;
+                case "answer":
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    break;
+                case "candidate":
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    break;
+                case "message":
+                    setMessages((prev) => [...prev, data.message]);
+                    break;
+                case "all_users":
+                    // Handle displaying all users
+                    break;
+                case "leave":
+                    // Handle user leaving
+                    break;
+                default:
+                    console.log("Unknown message type:", data.type);
             }
         };
-    }, [peerConnection]);
+
+        return () => {
+            ws.current.close();
+        };
+    }, [peerConnection, roomId, username]);
 
     useEffect(() => {
         async function getMedia() {
@@ -151,7 +181,7 @@ function VideoChat() {
                 stream.getTracks().forEach((track) => pc.addTrack(track, stream));
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        ws.current.send(JSON.stringify({ type: "candidate", candidate: event.candidate }));
+                        sendMessage({ type: "candidate", roomId, candidate: event.candidate, sender: username });
                     }
                 };
                 pc.ontrack = (event) => {
@@ -163,28 +193,7 @@ function VideoChat() {
             }
         }
         getMedia();
-    }, []);
-
-    useEffect(() => {
-        ws.current = new WebSocket("ws://localhost:8080/signal");
-        ws.current.onopen = () => {
-            console.log("WebSocket connection established");
-        };
-        ws.current.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
-        ws.current.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-        ws.current.onmessage = async (message) => {
-            const data = JSON.parse(message.data);
-            // 이하 메시지 처리 로직
-        };
-
-        return () => {
-            ws.current.close();
-        };
-    }, []);
+    }, [roomId, username]);
 
     const sendMessage = (data) => {
         if (ws.current.readyState === WebSocket.OPEN) {
@@ -206,7 +215,7 @@ function VideoChat() {
             localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
             pc.onicecandidate = (event) => {
                 if (event.candidate) {
-                    sendMessage({ type: "candidate", candidate: event.candidate });
+                    sendMessage({ type: "candidate", roomId, candidate: event.candidate, sender: username });
                 }
             };
             pc.ontrack = (event) => {
@@ -214,11 +223,12 @@ function VideoChat() {
             };
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            sendMessage({ type: "offer", offer });
+            sendMessage({ type: "offer", roomId, offer, sender: username });
             setPeerConnection(pc);
             setIsCallActive(true);
         }
     };
+
     const toggleVideo = () => {
         if (localStream) {
             localStream.getVideoTracks()[0].enabled = !isVideoEnabled;
@@ -231,6 +241,11 @@ function VideoChat() {
             localStream.getAudioTracks()[0].enabled = !isAudioEnabled;
             setIsAudioEnabled(!isAudioEnabled);
         }
+    };
+
+    const handleSendMessage = () => {
+        sendMessage({ type: "message", roomId, message: newMessage, sender: username });
+        setNewMessage("");
     };
 
     return (
@@ -265,7 +280,7 @@ function VideoChat() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => {
-                        if (e.key === "Enter") sendMessage();
+                        if (e.key === "Enter") handleSendMessage();
                     }}
                     placeholder="Type a message..."
                 />
