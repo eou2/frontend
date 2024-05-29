@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Error, Form, Input, Switcher, Wrapper } from "../../components/auth-components";
@@ -11,6 +11,12 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const { auth, login } = useAuth();
+
+    useEffect(() => {
+        if (auth.isAuthenticated) {
+            navigate("/");
+        }
+    }, [auth.isAuthenticated, navigate]);
 
     const onChange = (e) => {
         const { name, value } = e.target;
