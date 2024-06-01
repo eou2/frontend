@@ -4,8 +4,6 @@ import videoOnIcon from "../../images/video-on.svg";
 import videoOffIcon from "../../images/video-off.svg";
 import micOnIcon from "../../images/mic-on.svg";
 import micOffIcon from "../../images/mic-off.svg";
-import callIcon from "../../images/call-on.svg";
-import hangupIcon from "../../images/call-off.svg";
 
 const Container = styled.div`
     display: flex;
@@ -79,35 +77,6 @@ const Button = styled.button`
     }
 `;
 
-const ChatSection = styled.div`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 20px;
-`;
-
-const ChatBox = styled.div`
-    width: 100%;
-    height: 80%;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-`;
-
-const ChatInput = styled.input`
-    width: calc(100% - 20px);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-`;
-
 function VideoChat() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
@@ -115,60 +84,67 @@ function VideoChat() {
     const [localStream, setLocalStream] = useState(null);
     const [isVideoEnabled, setIsVideoEnabled] = useState(true);
     const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-    const [isCallActive, setIsCallActive] = useState(false);
-    const [messages, setMessages] = useState([]);
-    const [newMessage, setNewMessage] = useState("");
     const ws = useRef(null);
-    const [roomId] = useState("12345"); // Room ID는 실제 환경에 맞게 설정하세요.
-    const [username] = useState("user1"); // 사용자 이름은 실제 환경에 맞게 설정하세요.
+    const roomId = "1"; // 고정된 방 ID로 설정
+    const iceCandidatesBuffer = useRef([]); // ICE 후보자를 버퍼에 저장
+    const messageBuffer = useRef([]); // WebSocket 메시지를 버퍼에 저장
 
     useEffect(() => {
         ws.current = new WebSocket("ws://43.203.209.38:8080/signal");
         ws.current.onopen = () => {
             console.log("WebSocket connection established");
-            sendMessage({ type: "join_room", roomId, sender: username });
-        };
-        ws.current.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
-        ws.current.onerror = (error) => {
-            console.error("WebSocket error:", error);
-            alert("WebSocket connection failed. Please check the server and try again.");
-        };
+            sendMessage({ type: "join_room", roomId });
 
+            // WebSocket 연결 후 버퍼에 있는 메시지를 전송
+            messageBuffer.current.forEach((msg) => {
+                ws.current.send(JSON.stringify(msg));
+            });
+            messageBuffer.current = [];
+        };
         ws.current.onmessage = async (message) => {
             const data = JSON.parse(message.data);
             switch (data.type) {
                 case "offer":
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    sendMessage({ type: "answer", roomId, answer, sender: username });
+                    if (data.sender !== ws.current.id) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+                        sendMessage({ type: "answer", roomId, answer });
+
+                        // 원격 설명이 설정된 후 버퍼에 있는 모든 후보자를 추가
+                        iceCandidatesBuffer.current.forEach((candidate) => {
+                            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                        });
+                        iceCandidatesBuffer.current = [];
+                    }
                     break;
                 case "answer":
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    if (data.sender !== ws.current.id) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+                        // 원격 설명이 설정된 후 버퍼에 있는 모든 후보자를 추가
+                        iceCandidatesBuffer.current.forEach((candidate) => {
+                            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                        });
+                        iceCandidatesBuffer.current = [];
+                    }
                     break;
                 case "candidate":
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    if (data.sender !== ws.current.id) {
+                        if (peerConnection && peerConnection.remoteDescription) {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        } else {
+                            iceCandidatesBuffer.current.push(data.candidate);
+                        }
+                    }
                     break;
-                case "message":
-                    setMessages((prev) => [...prev, data.message]);
-                    break;
-                case "all_users":
-                    // Handle displaying all users
-                    break;
-                case "leave":
-                    // Handle user leaving
-                    break;
-                default:
-                    console.log("Unknown message type:", data.type);
             }
         };
 
         return () => {
             ws.current.close();
         };
-    }, [peerConnection, roomId, username]);
+    }, [peerConnection]);
 
     useEffect(() => {
         async function getMedia() {
@@ -179,53 +155,39 @@ function VideoChat() {
 
                 const pc = new RTCPeerConnection();
                 stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        sendMessage({ type: "candidate", roomId, candidate: event.candidate, sender: username });
+                        sendMessage({ type: "candidate", roomId, candidate: event.candidate.toJSON() });
                     }
                 };
+
                 pc.ontrack = (event) => {
-                    remoteVideoRef.current.srcObject = event.streams[0];
+                    if (remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
+                        remoteVideoRef.current.srcObject = event.streams[0];
+                    }
                 };
+
+                pc.oniceconnectionstatechange = () => console.log(`ICE state: ${pc.iceConnectionState}`);
+                pc.onconnectionstatechange = () => console.log(`Connection state: ${pc.connectionState}`);
+
                 setPeerConnection(pc);
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                sendMessage({ type: "offer", roomId, offer });
             } catch (err) {
                 console.error("Error accessing media devices.", err);
             }
         }
         getMedia();
-    }, [roomId, username]);
+    }, [roomId]);
 
     const sendMessage = (data) => {
         if (ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify(data));
+            ws.current.send(JSON.stringify({ ...data, sender: ws.current.id }));
         } else {
-            console.error("WebSocket is not open: ", ws.current.readyState);
-        }
-    };
-
-    const handleCall = async () => {
-        if (isCallActive) {
-            if (peerConnection) {
-                peerConnection.close();
-                setPeerConnection(null);
-                setIsCallActive(false);
-            }
-        } else {
-            const pc = new RTCPeerConnection();
-            localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    sendMessage({ type: "candidate", roomId, candidate: event.candidate, sender: username });
-                }
-            };
-            pc.ontrack = (event) => {
-                remoteVideoRef.current.srcObject = event.streams[0];
-            };
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            sendMessage({ type: "offer", roomId, offer, sender: username });
-            setPeerConnection(pc);
-            setIsCallActive(true);
+            messageBuffer.current.push({ ...data, sender: ws.current.id });
         }
     };
 
@@ -243,11 +205,6 @@ function VideoChat() {
         }
     };
 
-    const handleSendMessage = () => {
-        sendMessage({ type: "message", roomId, message: newMessage, sender: username });
-        setNewMessage("");
-    };
-
     return (
         <Container>
             <VideoSection>
@@ -256,12 +213,6 @@ function VideoChat() {
                     <LocalVideo ref={localVideoRef} autoPlay playsInline />
                 </VideoWrapper>
                 <ButtonContainer>
-                    <Button onClick={handleCall}>
-                        <img
-                            src={isCallActive ? hangupIcon : callIcon}
-                            alt={isCallActive ? "End Call" : "Start Call"}
-                        />
-                    </Button>
                     <Button onClick={toggleVideo}>
                         <img src={isVideoEnabled ? videoOnIcon : videoOffIcon} alt="Toggle Video" />
                     </Button>
@@ -270,21 +221,6 @@ function VideoChat() {
                     </Button>
                 </ButtonContainer>
             </VideoSection>
-            <ChatSection>
-                <ChatBox>
-                    {messages.map((msg, index) => (
-                        <div key={index}>{msg}</div>
-                    ))}
-                </ChatBox>
-                <ChatInput
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                        if (e.key === "Enter") handleSendMessage();
-                    }}
-                    placeholder="Type a message..."
-                />
-            </ChatSection>
         </Container>
     );
 }
