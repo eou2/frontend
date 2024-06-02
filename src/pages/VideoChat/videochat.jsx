@@ -1,91 +1,37 @@
 import React, { useRef, useEffect, useState } from "react";
-import styled from "styled-components";
+import {
+    Container,
+    VideoSection,
+    VideoWrapper,
+    RemoteVideo,
+    LocalVideo,
+    ButtonContainer,
+    Button,
+    ChatSection,
+    ChatBox,
+    MessageInput,
+    TopicBox,
+    TopicTitle,
+    TopicList,
+    TopicItem,
+} from "./videochatStyle";
 import videoOnIcon from "../../images/video-on.svg";
 import videoOffIcon from "../../images/video-off.svg";
 import micOnIcon from "../../images/mic-on.svg";
 import micOffIcon from "../../images/mic-off.svg";
-
-const Container = styled.div`
-    display: flex;
-    height: 100vh;
-    background-color: #f0f0f0;
-`;
-
-const VideoSection = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 3;
-    padding: 20px;
-    background-color: #ffffff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    margin-right: 20px;
-`;
-
-const VideoWrapper = styled.div`
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background-color: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    border-radius: 8px;
-`;
-
-const RemoteVideo = styled.video`
-    width: 100%;
-    height: 100%;
-    background-color: black;
-`;
-
-const LocalVideo = styled.video`
-    position: absolute;
-    width: 330px;
-    height: 250px;
-    bottom: 20px;
-    right: 20px;
-    background-color: black;
-    border: 2px solid white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-`;
-
-const ButtonContainer = styled.div`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    background-color: white;
-    padding: 10px;
-    border-radius: 8px;
-    margin-top: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-`;
-
-const Button = styled.button`
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin: 0 10px;
-    img {
-        width: 50px;
-        height: 50px;
-    }
-`;
 
 function VideoChat() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const [peerConnection, setPeerConnection] = useState(null);
     const [localStream, setLocalStream] = useState(null);
+    const [remoteStream, setRemoteStream] = useState(null); // 원격 스트림 관리
     const [isVideoEnabled, setIsVideoEnabled] = useState(true);
     const [isAudioEnabled, setIsAudioEnabled] = useState(true);
     const ws = useRef(null);
     const roomId = "1"; // 고정된 방 ID로 설정
+    const userId = "1"; // 고정된 사용자 ID로 설정
+    const countRef = useRef(1); // 업로드 횟수
     const iceCandidatesBuffer = useRef([]); // ICE 후보자를 버퍼에 저장
     const messageBuffer = useRef([]); // WebSocket 메시지를 버퍼에 저장
 
@@ -105,7 +51,7 @@ function VideoChat() {
             const data = JSON.parse(message.data);
             switch (data.type) {
                 case "offer":
-                    if (data.sender !== ws.current.id) {
+                    if (data.sender !== ws.current.id && peerConnection) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
@@ -119,7 +65,7 @@ function VideoChat() {
                     }
                     break;
                 case "answer":
-                    if (data.sender !== ws.current.id) {
+                    if (data.sender !== ws.current.id && peerConnection) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
 
                         // 원격 설명이 설정된 후 버퍼에 있는 모든 후보자를 추가
@@ -165,6 +111,12 @@ function VideoChat() {
                 pc.ontrack = (event) => {
                     if (remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
                         remoteVideoRef.current.srcObject = event.streams[0];
+                        setRemoteStream(event.streams[0]); // 원격 스트림 설정
+                        // 원격 미디어 레코더 설정
+                        const options = { mimeType: "video/webm; codecs=vp9" };
+                        const remoteRecorder = new MediaRecorder(event.streams[0], options);
+                        remoteRecorder.ondataavailable = handleRemoteDataAvailable;
+                        remoteRecorder.start(10000); // 10초마다 데이터 전송
                     }
                 };
 
@@ -187,7 +139,47 @@ function VideoChat() {
         if (ws.current.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({ ...data, sender: ws.current.id }));
         } else {
-            messageBuffer.current.push({ ...data, sender: ws.current.id });
+            messageBuffer.current.push({ ...data, sender: ws.current.id }); // 여기에서 세미콜론을 추가합니다
+        }
+    };
+
+    const handleRemoteDataAvailable = (event) => {
+        if (event.data.size > 0) {
+            // Check the data type and size for debugging
+            console.log("Data available: ", event.data);
+            console.log("Data type: ", event.data.type);
+            console.log("Data size: ", event.data.size);
+            uploadRemoteData(event.data);
+        }
+    };
+
+    const uploadRemoteData = async (data) => {
+        const formData = new FormData();
+        formData.append("audiofile", new Blob([data], { type: "audio/webm" }), "audio.webm");
+        formData.append("videofile", new Blob([data], { type: "video/webm" }), "video.webm");
+
+        // Log FormData keys for debugging
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ": " + pair[1]);
+        }
+
+        try {
+            const response = await fetch(
+                `http://3.36.131.179:8000/upload-video/${roomId}/${userId}/${countRef.current}`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+
+            if (response.ok) {
+                console.log("Upload successful");
+                countRef.current += 1; // 업로드 성공 시 카운트를 증가
+            } else {
+                console.error("Upload failed", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error uploading data", error);
         }
     };
 
@@ -221,6 +213,18 @@ function VideoChat() {
                     </Button>
                 </ButtonContainer>
             </VideoSection>
+            <ChatSection>
+                <ChatBox>
+                    {/* 채팅 메시지를 표시하는 부분 */}{" "}
+                    <TopicBox>
+                        <TopicTitle>대화 주제 추천</TopicTitle>
+                        <TopicList>
+                            <TopicItem>...</TopicItem>
+                        </TopicList>
+                    </TopicBox>
+                </ChatBox>
+                <MessageInput placeholder="메시지를 입력하세요..." />
+            </ChatSection>
         </Container>
     );
 }
