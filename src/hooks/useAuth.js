@@ -9,7 +9,7 @@ export const useAuth = () => {
     const signup = async (formData) => {
         try {
             const response = await axios.post(
-                "http://43.203.209.38:8080/member/sign-up",
+                "https://emotionfeedback.site/member/sign-up",
                 {
                     email: formData.email,
                     password: formData.password,
@@ -45,7 +45,7 @@ export const useAuth = () => {
         setAuth((prevAuth) => ({ ...prevAuth, error: "" }));
         try {
             const response = await axios.post(
-                "http://43.203.209.38:8080/member/sign-in",
+                "https://emotionfeedback.site/member/sign-in",
                 {
                     username: email,
                     password: password,

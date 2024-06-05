@@ -80,7 +80,7 @@ const Signup = () => {
             console.log("Form Data:", formData);
             const response = await signup(formData); // JSON 형태로 전송
             console.log("회원가입 성공:", response);
-            navigate("/welcome");
+            navigate("/login"); // 회원가입 성공 후 /login으로 이동
         } catch (error) {
             console.error("회원가입 실패:", error);
             alert("회원가입에 실패했습니다. 다시 시도해 주세요.");

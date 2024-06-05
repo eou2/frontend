@@ -43,7 +43,7 @@ function VideoChat() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        ws.current = new WebSocket("ws://43.203.209.38:8080/signal");
+        ws.current = new WebSocket("wss://emotionfeedback.site/signal");
         ws.current.onopen = () => {
             console.log("WebSocket connection established");
             sendMessage({ type: "join_room", roomId });
@@ -206,7 +206,7 @@ function VideoChat() {
 
     const fetchProfileBasedTopics = async () => {
         try {
-            const response = await fetch(`http://43.203.209.38:8080/subject/${userId}/profile`);
+            const response = await fetch(`https://emotionfeedback.site/subject/${userId}/profile`);
             if (response.ok) {
                 const data = await response.json();
                 setTopicRecommendations(data.profileSubject);
@@ -220,7 +220,7 @@ function VideoChat() {
 
     const fetchConversationBasedTopics = async () => {
         try {
-            const response = await fetch(`http://43.203.209.38:8080/subject/${roomId}/${userId}/scenario`);
+            const response = await fetch(`https://emotionfeedback.site/subject/${roomId}/${userId}/scenario`);
             if (response.ok) {
                 const data = await response.json();
                 setTopicRecommendations(data.profileSubject);
