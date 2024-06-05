@@ -90,6 +90,9 @@ export const ChatBox = styled.div`
     padding: 10px;
     overflow-y: auto;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* TopicBtn을 중앙에 정렬 */
 `;
 
 export const MessageInput = styled.textarea`
@@ -102,23 +105,49 @@ export const MessageInput = styled.textarea`
 `;
 
 export const TopicBox = styled.div`
-    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column; /* flex-direction을 column으로 변경 */
+    align-items: center; /* TopicBtn과 TopicList를 중앙에 정렬 */
+    border: 0.5px solid;
+    border-radius: 10px;
+    border-color: #c9c9c9;
+    width: calc(100% - 20px); /* 부모 요소와 일정한 간격을 유지 (10px 패딩을 고려) */
+    margin: 10px; /* 부모 요소와의 간격을 설정 */
+    min-height: 80px; /* 고정된 세로 크기 설정 */
 `;
 
 export const TopicBtn = styled.button`
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    border-radius: 12px; /* 모서리를 둥글게 */
+    font-family: "Arial", sans-serif; /* 이쁜 폰트 적용 (Arial 예시) */
+    font-weight: bold; /* 글자 굵기 굵게 */
+    font-size: 14px; /* 글자 크기 키우기 */
+    padding: 10px 20px; /* 버튼 크기 키우기 */
+    background-color: #852fdc; /* 버튼 배경색 */
+    color: white; /* 글자 색상 */
+    border: none; /* 테두리 제거 */
+    cursor: pointer; /* 커서 변경 */
+    transition: background-color 0.3s ease; /* 부드러운 전환 효과 */
+
+    &:hover {
+        background-color: #561e8d; /* hover 시 배경색 변경 */
+    }
 `;
 
 export const TopicList = styled.ul`
     list-style: none;
     padding: 0;
+    margin: 5px;
 `;
 
 export const TopicItem = styled.li`
     margin-bottom: 5px;
 `;
+
 export const EndCallButton = styled.button`
-    margin-left: 15px;
+    margin-left: 1%;
     border: 2px solid black;
     background-color: white;
     padding: 8px 16px; /* 크기 줄이기 */

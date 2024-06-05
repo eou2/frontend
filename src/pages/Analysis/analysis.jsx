@@ -49,7 +49,7 @@ const Header = styled.h1`
 const HeartContainer = styled.div`
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 `;
 
 const HeartText = styled.span`
@@ -59,12 +59,6 @@ const HeartText = styled.span`
     color: #852fdc;
     font-family: "Poppins", sans-serif;
     font-weight: 600;
-`;
-
-const HeartWrapper = styled.div`
-    position: relative;
-    width: 50px;
-    height: 50px;
 `;
 
 const GraphContainer = styled.div`

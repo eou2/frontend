@@ -269,8 +269,8 @@ function VideoChat() {
             <ChatSection>
                 <ChatBox>
                     {/* 채팅 메시지를 표시하는 부분 */}
+                    <TopicBtn onClick={handleTopicButtonClick}>대화 주제 추천</TopicBtn>
                     <TopicBox>
-                        <TopicBtn onClick={handleTopicButtonClick}>대화 주제 추천</TopicBtn>
                         <TopicList>
                             {topicRecommendations.map((topic, index) => (
                                 <TopicItem key={index}>{topic}</TopicItem>
