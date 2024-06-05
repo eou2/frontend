@@ -39,8 +39,8 @@ export const RemoteVideo = styled.video`
 
 export const LocalVideo = styled.video`
     position: absolute;
-    width: 330px;
-    height: 250px;
+    width: 280px;
+    height: 210px;
     bottom: 20px;
     right: 20px;
     background-color: black;
@@ -74,6 +74,7 @@ export const Button = styled.button`
 
 export const ChatSection = styled.div`
     flex: 1;
+    width: 200px;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -104,7 +105,7 @@ export const TopicBox = styled.div`
     margin-bottom: 20px;
 `;
 
-export const TopicTitle = styled.h4`
+export const TopicBtn = styled.button`
     margin-bottom: 10px;
 `;
 
@@ -115,4 +116,15 @@ export const TopicList = styled.ul`
 
 export const TopicItem = styled.li`
     margin-bottom: 5px;
+`;
+export const EndCallButton = styled.button`
+    margin-left: 15px;
+    border: 2px solid black;
+    background-color: white;
+    padding: 8px 16px; /* 크기 줄이기 */
+    cursor: pointer;
+    border-radius: 8px; /* 모서리 둥글게 */
+    &:hover {
+        background-color: lightgray;
+    }
 `;

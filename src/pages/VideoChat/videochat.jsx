@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Container,
     VideoSection,
@@ -11,14 +12,16 @@ import {
     ChatBox,
     MessageInput,
     TopicBox,
-    TopicTitle,
+    TopicBtn,
     TopicList,
     TopicItem,
+    EndCallButton,
 } from "./videochatStyle";
 import videoOnIcon from "../../images/video-on.svg";
 import videoOffIcon from "../../images/video-off.svg";
 import micOnIcon from "../../images/mic-on.svg";
 import micOffIcon from "../../images/mic-off.svg";
+import LoadingComponent from "../../components/loading"; // 로딩 컴포넌트 임포트
 
 function VideoChat() {
     const localVideoRef = useRef(null);
@@ -28,12 +31,16 @@ function VideoChat() {
     const [remoteStream, setRemoteStream] = useState(null); // 원격 스트림 관리
     const [isVideoEnabled, setIsVideoEnabled] = useState(true);
     const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+    const [topicRecommendations, setTopicRecommendations] = useState([]); // 주제 추천 목록
+    const [clickCount, setClickCount] = useState(0); // 버튼 클릭 횟수
     const ws = useRef(null);
     const roomId = "1"; // 고정된 방 ID로 설정
     const userId = "1"; // 고정된 사용자 ID로 설정
     const countRef = useRef(1); // 업로드 횟수
     const iceCandidatesBuffer = useRef([]); // ICE 후보자를 버퍼에 저장
     const messageBuffer = useRef([]); // WebSocket 메시지를 버퍼에 저장
+    const [isLoading, setIsLoading] = useState(false); // 로딩 상태 관리
+    const navigate = useNavigate();
 
     useEffect(() => {
         ws.current = new WebSocket("ws://43.203.209.38:8080/signal");
@@ -197,8 +204,53 @@ function VideoChat() {
         }
     };
 
+    const fetchProfileBasedTopics = async () => {
+        try {
+            const response = await fetch(`http://43.203.209.38:8080/subject/${userId}/profile`);
+            if (response.ok) {
+                const data = await response.json();
+                setTopicRecommendations(data.profileSubject);
+            } else {
+                console.error("Error fetching profile-based topics:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error fetching profile-based topics:", error);
+        }
+    };
+
+    const fetchConversationBasedTopics = async () => {
+        try {
+            const response = await fetch(`http://43.203.209.38:8080/subject/${roomId}/${userId}/scenario`);
+            if (response.ok) {
+                const data = await response.json();
+                setTopicRecommendations(data.profileSubject);
+            } else {
+                console.error("Error fetching conversation-based topics:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error fetching conversation-based topics:", error);
+        }
+    };
+
+    const handleTopicButtonClick = () => {
+        if (clickCount === 0) {
+            fetchProfileBasedTopics();
+        } else {
+            fetchConversationBasedTopics();
+        }
+        setClickCount(clickCount + 1);
+    };
+
+    const handleEndCall = () => {
+        setIsLoading(true); // 로딩 상태 활성화
+        setTimeout(() => {
+            navigate("/analysis");
+        }, 3000); // 3초 후에 페이지 이동
+    };
+
     return (
         <Container>
+            {isLoading && <LoadingComponent />}
             <VideoSection>
                 <VideoWrapper>
                     <RemoteVideo ref={remoteVideoRef} autoPlay playsInline />
@@ -211,15 +263,18 @@ function VideoChat() {
                     <Button onClick={toggleAudio}>
                         <img src={isAudioEnabled ? micOnIcon : micOffIcon} alt="Toggle Audio" />
                     </Button>
+                    <EndCallButton onClick={handleEndCall}>종료</EndCallButton>
                 </ButtonContainer>
             </VideoSection>
             <ChatSection>
                 <ChatBox>
-                    {/* 채팅 메시지를 표시하는 부분 */}{" "}
+                    {/* 채팅 메시지를 표시하는 부분 */}
                     <TopicBox>
-                        <TopicTitle>대화 주제 추천</TopicTitle>
+                        <TopicBtn onClick={handleTopicButtonClick}>대화 주제 추천</TopicBtn>
                         <TopicList>
-                            <TopicItem>...</TopicItem>
+                            {topicRecommendations.map((topic, index) => (
+                                <TopicItem key={index}>{topic}</TopicItem>
+                            ))}
                         </TopicList>
                     </TopicBox>
                 </ChatBox>
