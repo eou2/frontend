@@ -245,7 +245,7 @@ function VideoChat() {
         setIsLoading(true); // 로딩 상태 활성화
         setTimeout(() => {
             navigate("/analysis");
-        }, 3000); // 3초 후에 페이지 이동
+        }, 5000); // 3초 후에 페이지 이동
     };
 
     return (
