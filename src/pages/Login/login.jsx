@@ -12,12 +12,6 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const { auth, login } = useAuth();
 
-    useEffect(() => {
-        if (auth.isAuthenticated) {
-            navigate("/");
-        }
-    }, [auth.isAuthenticated, navigate]);
-
     const onChange = (e) => {
         const { name, value } = e.target;
         if (name === "email") {

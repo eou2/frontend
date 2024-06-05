@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import Home from "../pages/Home/home";
 import Login from "../pages/Login/login";
-//import Profile from "../pages/Profile/profile";
 import Signup from "../pages/Signup/signup";
 import VideoChat from "../pages/VideoChat/videochat";
 import Analysis from "../pages/Analysis/analysis";
