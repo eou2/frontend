@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Line } from "react-chartjs-2";
 import {
@@ -74,7 +74,7 @@ const DialogContainer = styled.div`
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 15px;
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
 `;
 
 const DialogText = styled.p`
@@ -111,47 +111,51 @@ const MenuButton = styled.button`
     font-size: 24px;
     cursor: pointer;
 `;
-// 8분을 10초 단위로 표시
-const labels = Array.from({ length: 49 }, (_, i) => (i * 10).toString()); // 0부터 480초(8분)까지 10초 단위
+// 10초, 20초, 30초, 40초, 50초, 60초, 70초 표시
+const labels = ["10초", "20초", "30초", "40초", "50초", "60초", "70초", "80초"];
 
 const data = {
     labels: labels,
     datasets: [
         {
             label: "호감도",
-            data: [
-                20, 30, 50, 40, 60, 80, 70, 90, 90, 80, 70, 50, 60, 70, 80, 60, 50, 70, 90, 90, 80, 70, 60, 50, 40, 30,
-                20, 10, 20, 30, 50, 60, 70, 80, 80, 80, 80, 70, 70, 60, 50, 40, 30, 20, 10, 20, 30, 40, 50,
-            ], // 48개의 데이터
+            data: [54, 51, 63, 82, 62, 32, 58, 52], // 7개의 데이터
             fill: true,
             backgroundColor: "rgba(93, 63, 211, 0.2)",
             borderColor: "#852fdc",
+            tension: 0.3, // 곡선형으로 만듦
         },
     ],
 };
 
 const dialogData = [
-    "남자: 안녕하세요.<br/>여자: 안녕하세요.",
-    "남자: 아, 혹시 나이가 어떻게 되세요?<br/>여자: 저 저 22살이요. 나이가 어떻게 되세요?",
-    "남자: 아 저 26살이요.<br/>여자: 아 엠비티이가 어떻게 배세요?",
-    "남자: 저 이에스티제이요.<br/>여자: 아 아 저는 아이엔티피요.",
-    "남자: 취미가 어떻게 배세요?<br/>여자: 음, 저는 마블 영화 보는 거 좋아해요.",
-    "남자: 오, 마블 저도 마블 되게 좋아하는데.<br/>남자: 그르트 너무 귀엽지 않아요?",
-    "여자: 맞아요 저 그루트 피규어도 집에 있어요.", // 여기만 종합 호감도 80으로 설정됨
-    "남자: 저는 헬스 좋아해요.<br/>여자: 아, 진짜요? 헬스 좋아하세요, 3대.<br/>여자: 시는지 아세요?",
-    "남자: 음, 저 400정도 들어요.<br/>여자: 아, 그래요? 아, 400이면 되게 잘 치시네요.",
-    "남자: 장당하죠.<br/>여자: 되게 멋져요.",
-    "남자: 그런.",
-    // 나머지 대화 데이터 추가
+    "나: 안녕하세요<br/>상대방: 안녕하세요 반갑습니다",
+    "나: 전 이서진입니다 <br/>상대방: 어 전 심재호입니다 혹시 나이가 어떻게 되시나요",
+    "나: 저는 24살이에요 재호님은 몇살이세요<br/>상대방: 아 저는 27살입니다<br/>나: 음 영화보는거 좋아하세 어떤영화 좋아하세요<br/>",
+    "상대방: 오 저는 마블영화 좋아해요<br/>나: 어 저도 마블 좋아하는데 저는 어벤저스 좋아해요 캐릭터 누구 좋아하세요",
+    "상대방: 저는 그루트요",
+    "나: 아이엠 그루투<br/>상대방: 하 진짜 똑같은데요 흐 그루투 귀여워서 저도 좋아하거든요",
+    "나: 아 서진님은 취미가 어떻게 되시나요<br/>상대방: 저는 아이돌 음악 듣는거 좋아해요",
+    "나:  아이돌 좋아하시는구나 어떤 그룹 좋아하세요<br/>상대방: 저는 라이즈 원빈이요 원빈이 라이즈 센터인데 진짜 잘생겼거든요 진짜 잘생긴거밖에 생각이 안나요",
+    "나: 아 그렇구나 저는 잘 모르겠네요<br/>상대방: 그루트 많이 좋아하시나봐요",
+    "나: 맞아요 피규어도 엄청 많아요<br/>상대방: 피규어 되게 비쌀텐데 진짜 많이 좋아하시나보네요",
+    "나: 맞아요 하 제가 소개팅이 처음이라 좀 어색하네요<br/>상대방: 저도 소개팅이 처음이라 무슨 말해야할지 모르겠어요",
 ];
 
 const Analysis = () => {
     const [dialogIndex, setDialogIndex] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
+    const [averageHeartRate, setAverageHeartRate] = useState(0);
 
     const toggleMenu = () => {
         setShowMenu(!showMenu);
     };
+
+    useEffect(() => {
+        const sum = data.datasets[0].data.reduce((acc, value) => acc + value, 0);
+        const average = Math.floor(sum / data.datasets[0].data.length); // 소수점 버림
+        setAverageHeartRate(average);
+    }, []);
 
     const options = {
         responsive: true,
@@ -165,16 +169,6 @@ const Analysis = () => {
                 },
                 grid: {
                     display: false, // x축 격자선 제거
-                },
-                ticks: {
-                    callback: function (value, index) {
-                        // 라벨을 60초(1분) 간격으로만 표시
-                        const seconds = parseInt(this.getLabelForValue(value));
-                        const minutes = Math.floor(seconds / 60);
-                        return seconds % 60 === 0 ? `${minutes}분` : "";
-                    },
-                    maxRotation: 0, // 라벨을 똑바로 표시
-                    minRotation: 0, // 라벨을 똑바로 표시
                 },
             },
             y: {
@@ -212,7 +206,7 @@ const Analysis = () => {
                     <HeartText>
                         <FiHeart />
                     </HeartText>
-                    <HeartText>70</HeartText>
+                    <HeartText>{averageHeartRate}</HeartText>
                 </HeartContainer>
                 <GraphContainer>
                     <Line data={data} options={options} />
